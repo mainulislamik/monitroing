@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Monitoring Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-color: rgba(30, 41, 59, 0.7);
+            --header-color: rgba(15, 23, 42, 0.8);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger-color: #ef4444;
+            --blur: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, #1e293b 0%, #0f172a 50%);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Header */
+        header {
+            background-color: var(--header-color);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .stats {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.05);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Main Container */
+        #employee-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+            padding: 30px 40px;
+            flex: 1;
+        }
+
+        /* Employee Card */
+        .employee-card {
+            background-color: var(--card-color);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .employee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0,0,0,0.1);
+        }
+
+        .employee-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            white-space: nowrap;
+        }
+
+        /* Image Area */
+        .img-wrapper {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Cursor styling */
+        .cursor {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 20px solid #fff;
+            transform: rotate(-25deg);
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));
+            pointer-events: none;
+            z-index: 10;
+            /* Smooth tracking movement: */
+            transition: top 0.12s linear, left 0.12s linear;
+            margin-left: -4px;
+            margin-top: -4px;
+        }
+
+        /* Card Footer */
+        .card-footer {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .update-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .fullscreen-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .fullscreen-btn:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .fullscreen-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Fullscreen Overrides */
+        .img-wrapper:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            aspect-ratio: auto;
+        }
+
+        .img-wrapper:fullscreen img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .close-fullscreen-btn {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+            transition: background-color 0.2s;
+        }
+
+        .close-fullscreen-btn:hover {
+            background-color: var(--danger-color);
+        }
+
+        .img-wrapper:fullscreen .close-fullscreen-btn {
+            display: block;
+        }
+
+        /* Empty State */
+        #empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #empty-state svg {
+            width: 64px;
+            height: 64px;
+            opacity: 0.5;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>
+            <div class="pulse-dot"></div>
+            OmniVision <span style="font-weight:300; opacity:0.7;">| Monitor</span>
+        </h1>
+        <div class="stats" id="connection-stats">
+            Active Interfaces: <strong id="active-count" style="color:var(--text-primary)">0</strong>
+        </div>
+    </header>
+    
+    <div id="employee-container">
+        <div id="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <p>Waiting for incoming connections...</p>
+        </div>
+        <!-- Employee cards will be injected here dynamically -->
+    </div>
+
+    <script>
+        const socket = io();
+        const container = document.getElementById('employee-container');
+        const emptyState = document.getElementById('empty-state');
+        const activeCountElem = document.getElementById('active-count');
+        const employees = {}; // Store elements by sid
+
+        function updateEmptyState() {
+            const count = Object.keys(employees).length;
+            activeCountElem.innerText = count;
+            if (count > 0) {
+                emptyState.style.display = 'none';
+            } else {
+                emptyState.style.display = 'flex';
+            }
+        }
+
+        socket.on('connect', () => {
+            console.log('Connected to OmniVision Server');
+        });
+
+        socket.on('disconnect', () => {
+            console.warn('Disconnected from server');
+        });
+
+        socket.on('employee_list_update', (active_employees) => {
+            const currentSids = Object.keys(active_employees);
+            
+            // Remove elements for disconnected employees
+            Object.keys(employees).forEach(sid => {
+                if (!currentSids.includes(sid)) {
+                    if (employees[sid].element) {
+                        employees[sid].element.remove();
+                    }
+                    delete employees[sid];
+                }
+            });
+            updateEmptyState();
+        });
+
+        socket.on('update_screen', (data) => {
+            const { sid, name, image } = data;
+            
+            if (!employees[sid]) {
+                // Remove empty state if present
+                updateEmptyState();
+
+                // Create Card
+                const card = document.createElement('div');
+                card.className = 'employee-card';
+                
+                // Header
+                const cardHeader = document.createElement('div');
+                cardHeader.className = 'card-header';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'employee-name';
+                nameDiv.innerText = name || `User_${sid.substr(0,6)}`;
+                
+                const statusBadge = document.createElement('div');
+                statusBadge.className = 'status-badge';
+                statusBadge.innerText = 'ONLINE';
+
+                cardHeader.appendChild(nameDiv);
+                cardHeader.appendChild(statusBadge);
+
+                // Image Wrapper
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'img-wrapper';
+
+                const img = document.createElement('img');
+                img.id = `screen-${sid}`;
+                img.title = 'Double click to expand';
+                
+                img.ondblclick = () => toggleFullScreen(imgWrapper);
+
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-fullscreen-btn';
+                closeBtn.innerText = 'Exit Fullscreen';
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFullScreen(imgWrapper);
+                };
+
+                imgWrapper.appendChild(img);
+                imgWrapper.appendChild(closeBtn);
+
+                // Footer
+                const cardFooter = document.createElement('div');
+                cardFooter.className = 'card-footer';
+
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'update-time';
+                timeDiv.innerText = 'Syncing...';
+
+                const btn = document.createElement('button');
+                btn.className = 'fullscreen-btn';
+                btn.innerText = 'Expand';
+                btn.onclick = () => toggleFullScreen(imgWrapper);
+
+                cardFooter.appendChild(timeDiv);
+                cardFooter.appendChild(btn);
+
+                // Assemble Card
+                card.appendChild(cardHeader);
+                card.appendChild(imgWrapper);
+                card.appendChild(cardFooter);
+                container.appendChild(card);
+                
+                employees[sid] = {
+                    element: card,
+                    img: img,
+                    imgWrapper: imgWrapper,
+                    timeDiv: timeDiv,
+                    cursor: null
+                };
+                updateEmptyState();
+            }
+            
+            // Update Image Data
+            if (employees[sid].img) {
+                employees[sid].img.src = 'data:image/jpeg;base64,' + image;
+                const now = new Date();
+                employees[sid].timeDiv.innerText = `Last sync: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+            }
+        });
+
+        function toggleFullScreen(elem) {
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => console.log(err));
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        socket.on('update_mouse', (data) => {
+            const { sid, x, y } = data;
+            
+            if (employees[sid]) {
+                const imgWrapper = employees[sid].imgWrapper;
+                const img = employees[sid].img;
+                
+                if (!imgWrapper || !img) return;
+
+                let cursor = employees[sid].cursor;
+                if (!cursor) {
+                    cursor = document.createElement('div');
+                    cursor.className = 'cursor';
+                    imgWrapper.appendChild(cursor);
+                    employees[sid].cursor = cursor;
+                }
+                
+                // Calculate position considering object-fit: contain
+                const wrapperRect = imgWrapper.getBoundingClientRect();
+                const imgRect = img.getBoundingClientRect();
+                
+                // Relative coordinates mapping
+                const offsetX = imgRect.left - wrapperRect.left;
+                const offsetY = imgRect.top - wrapperRect.top;
+                const cursorX = offsetX + (x * imgRect.width);
+                const cursorY = offsetY + (y * imgRect.height);
+                
+                cursor.style.left = `${cursorX}px`;
+                cursor.style.top = `${cursorY}px`;
+            }
+        });
+
+        // Cleanup stale connections gracefully if socket drops unexpectedly
+        setInterval(() => {
+            // (Optional logic to verify last active timestamps and remove dead cards)
+        }, 5000);
+
+    </script>
+</body>
+</html>

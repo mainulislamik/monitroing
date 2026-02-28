@@ -1,0 +1,7 @@
+python-socketio[client]
+websocket-client
+mss
+Pillow
+dxcam
+numpy
+pyinstaller

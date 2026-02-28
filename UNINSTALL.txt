@@ -1,0 +1,43 @@
+# UNINSTALLATION GUIDE
+========================
+
+If you need to remove the monitoring system, follow these steps:
+
+## 1. REMOVE SERVER (From the Server PC)
+
+1.  **Stop the Server**:
+    *   Open Task Manager (Ctrl+Shift+Esc).
+    *   Find "python.exe" or "cmd.exe" running the server script and End Task.
+    *   If running as a hidden service, run `taskkill /F /IM python.exe` in Command Prompt (Admin).
+
+2.  **Remove Auto-Start**:
+    *   Press `Win + R`, type `shell:startup`, and press Enter.
+    *   Delete the shortcut named "iMonServer" or similar if present.
+    *   Open Registry Editor (`regedit`).
+    *   Navigate to: `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`.
+    *   Delete the key named "iMonServer".
+
+3.  **Delete Files**:
+    *   Delete the installation folder (e.g., `C:\iMonServer`).
+
+---
+
+## 2. REMOVE CLIENT (From Employee PCs)
+
+1.  **Stop the Hidden Process**:
+    *   Open Task Manager.
+    *   Go to the "Details" tab.
+    *   Find `SystemDrive.exe` (this is the hidden client name).
+    *   Right-click and select "End Task".
+
+2.  **Remove Auto-Start**:
+    *   Open Registry Editor (`regedit`).
+    *   Navigate to: `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`.
+    *   Delete the key named "WindowsSystemDrive".
+
+3.  **Delete Files**:
+    *   Navigate to: `C:\Users\Public\Libraries\Windows_Update`.
+    *   Delete the folder `Windows_Update` or the file `SystemDrive.exe`.
+
+4.  **Cleanup**:
+    *   Empty the Recycle Bin.

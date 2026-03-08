@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Monitoring Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #0f172a;
@@ -27,16 +28,343 @@
             padding: 0;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent body scroll, use container scroll */
         }
 
-        /* Glassmorphism Header */
-        header {
-            background-color: var(--header-color);
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(var(--blur));
-            -webkit-backdrop-filter: blur(var(--blur));
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            font-weight: 700;
+            color: white;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-color);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Updates Container */
+        .updates-container {
+            display: none;
+            padding: 20px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .update-card {
+            background-color: var(--card-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+        }
+
+        .update-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .update-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .update-ip {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .update-btn {
+            background-color: #f59e0b;
+            color: #1e293b;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .update-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* Playback Container - Smart PSS Style */
+        .playback-container {
+            display: none;
+            flex: 1;
+            height: 100%;
+            background-color: #1e1e1e;
+            overflow: hidden;
+            flex-direction: row; /* Sidebar + Main */
+        }
+
+        .smart-pss-layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Sidebar */
+        .pss-sidebar {
+            width: 280px;
+            background-color: #252526;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            color: #ccc;
+        }
+
+        .pss-panel-header {
+            padding: 10px 15px;
+            background-color: #333;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pss-tree-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .pss-tree-node {
+            padding: 8px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 4px;
+            color: #bbb;
+            font-size: 13px;
+        }
+
+        .pss-tree-node:hover {
+            background-color: #3e3e42;
+            color: #fff;
+        }
+
+        .pss-tree-node.selected {
+            background-color: #007acc; /* VS Code/Dahua Blue */
+            color: #fff;
+        }
+
+        .pss-calendar-section {
+            padding: 15px;
+            border-top: 1px solid #333;
+            background-color: #2d2d30;
+        }
+
+        .pss-date-input {
+            width: 100%;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .pss-btn-search {
+            width: 100%;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .pss-btn-search:hover {
+            background-color: #0063a5;
+        }
+
+        /* Main Area */
+        .pss-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #000;
+            position: relative;
+        }
+
+        .pss-video-area {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .pss-video-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Keep aspect ratio */
+            display: none;
+        }
+        
+        .pss-no-video-msg {
+            position: absolute;
+            color: #555;
+            font-size: 24px;
+            pointer-events: none;
+        }
+
+        /* Controls & Timeline */
+        .pss-bottom-panel {
+            height: 140px; /* Timeline + Controls */
+            background-color: #252526;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pss-controls-bar {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            background-color: #333;
+            border-bottom: 1px solid #444;
+        }
+
+        .pss-control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pss-btn-icon {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pss-btn-icon:hover {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .pss-btn-icon.active {
+            color: #007acc;
+        }
+
+        .pss-time-display {
+            font-family: monospace;
+            color: #fff;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .pss-timeline-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #1e1e1e;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #pss-timeline-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Scrollbar for tree */
+        .pss-tree-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .pss-tree-container::-webkit-scrollbar-track {
+            background: #252526;
+        }
+        .pss-tree-container::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        .pss-tree-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Glassmorphism Header (Top Bar) */
+        header {
+            background-color: transparent;
             padding: 20px 40px;
             display: flex;
             justify-content: space-between;
@@ -47,13 +375,7 @@
         }
 
         header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: none; /* Hidden in header, shown in sidebar */
         }
 
         .pulse-dot {
@@ -78,6 +400,22 @@
             padding: 8px 16px;
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+        
+        .header-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
         }
 
         /* Main Container */
@@ -110,7 +448,7 @@
         }
 
         .card-header {
-            padding: 15px 20px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -120,15 +458,15 @@
 
         .employee-name {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .status-badge {
-            font-size: 0.75rem;
-            padding: 4px 10px;
+            font-size: 0.7rem;
+            padding: 2px 8px;
             border-radius: 12px;
             background: rgba(16, 185, 129, 0.2);
             color: #34d399;
@@ -139,7 +477,7 @@
         /* Image Area */
         .img-wrapper {
             width: 100%;
-            aspect-ratio: 16 / 9;
+            height: 220px; /* Reduced fixed height to save space */
             background-color: #000;
             position: relative;
             display: flex;
@@ -150,8 +488,8 @@
         }
 
         .img-wrapper img {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
             display: block;
             transition: opacity 0.3s ease;
@@ -177,7 +515,7 @@
 
         /* Card Footer */
         .card-footer {
-            padding: 12px 20px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -189,9 +527,12 @@
             color: var(--text-secondary);
         }
 
-        .fullscreen-btn {
-            background-color: var(--accent-color);
-            color: white;
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
             border: none;
             padding: 6px 14px;
             border-radius: 6px;
@@ -200,14 +541,39 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
         }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .fullscreen-btn {
+            background-color: var(--accent-color);
+            color: white;
+        }
 
         .fullscreen-btn:hover {
             background-color: var(--accent-hover);
-            transform: scale(1.05);
         }
-
-        .fullscreen-btn:active {
-            transform: scale(0.95);
+        
+        .record-btn {
+            background-color: #374151;
+            color: #e2e8f0;
+        }
+        
+        .record-btn.recording {
+            background-color: var(--danger-color);
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         /* Fullscreen Overrides */
@@ -266,38 +632,992 @@
             height: 64px;
             opacity: 0.5;
         }
+        
+        /* Modal for Recordings */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal {
+            background: #1e293b;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-close:hover {
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .save-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .save-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .recording-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .recording-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .recording-item:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        
+        .recording-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .recording-name {
+            font-weight: 500;
+        }
+        
+        .recording-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .download-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .download-link:hover {
+            text-decoration: underline;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
-
-    <header>
-        <h1>
+    <div class="sidebar">
+        <div class="sidebar-header">
             <div class="pulse-dot"></div>
-            OmniVision <span style="font-weight:300; opacity:0.7;">| Monitor</span>
-        </h1>
-        <div class="stats" id="connection-stats">
-            Active Interfaces: <strong id="active-count" style="color:var(--text-primary)">0</strong>
+            <h1>OmniVision</h1>
         </div>
-    </header>
+        
+        <nav>
+            <a onclick="showSection('dashboard')" class="nav-item active" id="nav-dashboard">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </a>
+            <a onclick="showSection('updates')" class="nav-item" id="nav-updates">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Updates
+            </a>
+            <a onclick="showSection('playback')" class="nav-item" id="nav-playback">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Playback
+            </a>
+            <a onclick="openRecordingsModal()" class="nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Legacy List
+            </a>
+            <a onclick="openSettingsModal()" class="nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a onclick="logout()" class="nav-item" style="color: var(--danger-color)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h2 style="margin:0; font-size:1.5rem;" id="page-title">Dashboard</h2>
+            <div class="stats" id="connection-stats">
+                <span>Active Interfaces: <strong id="active-count" style="color:var(--text-primary)">0</strong></span>
+            </div>
+        </header>
     
     <div id="employee-container">
-        <div id="empty-state">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            <p>Waiting for incoming connections...</p>
+        <div id="empty-state" class="empty-state">
+            <div class="pulse-dot" style="width:20px; height:20px; margin-bottom:20px; background-color:var(--text-secondary); box-shadow:none; animation:none;"></div>
+            <h2>Waiting for connections...</h2>
+            <p>Ensure the client application is running on employee machines.</p>
         </div>
         <!-- Employee cards will be injected here dynamically -->
     </div>
 
+    <!-- Updates Container -->
+    <div id="updates-container" class="updates-container">
+        <div style="background: var(--card-color); padding: 20px; border-radius: 16px; margin-bottom: 20px;">
+            <h3>Update Management</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Push updates to connected clients. This will restart the client application with the latest version.</p>
+            <button onclick="forceUpdateAll()" class="update-btn" style="background-color: var(--accent-color); color: white;">
+                <i class="fas fa-sync"></i> Update All Clients
+            </button>
+        </div>
+        
+        <div id="updates-list">
+            <!-- Update cards injected here -->
+        </div>
+    </div>
+
+    <!-- Playback Container -->
+    <div id="playback-container" class="playback-container">
+        <div class="smart-pss-layout">
+            <!-- Sidebar -->
+            <div class="pss-sidebar">
+                <div class="pss-panel-header">
+                    <button class="pss-btn-icon" onclick="showDashboard()" title="Back to Dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span>DEVICES</span>
+                </div>
+                
+                <div class="pss-tree-container" id="pss-device-tree">
+                    <!-- Tree nodes injected here -->
+                </div>
+
+                <div class="pss-panel-header">DATE</div>
+                <div class="pss-calendar-section">
+                    <input type="date" id="pss-date-picker" class="pss-date-input">
+                    <button class="pss-btn-search" onclick="searchRecordings()">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="pss-main">
+                <div class="pss-video-area">
+                    <div class="pss-no-video-msg" id="pss-no-video-msg">Select a record to play</div>
+                    <img id="pss-video-player" style="width:100%; height:100%; object-fit:contain; display:none;" alt="Video Stream" onerror="this.style.display='none'; document.getElementById('pss-no-video-msg').innerText='Playback Error: OpenCV not installed or file corrupted'; document.getElementById('pss-no-video-msg').style.display='block';">
+                </div>
+
+                <!-- Bottom Panel -->
+                <div class="pss-bottom-panel">
+                    <!-- Controls -->
+                    <div class="pss-controls-bar">
+                        <div class="pss-control-group">
+                            <button class="pss-btn-icon" id="btn-play-pause" onclick="togglePlay()">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="pss-btn-icon" onclick="stopPlayback()">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <span class="pss-time-display" id="pss-time-display">00:00:00</span>
+                        </div>
+                        
+                        <div class="pss-control-group">
+                            <button class="pss-btn-icon speed-btn" data-speed="0.5" onclick="changeSpeed(0.5)">0.5x</button>
+                            <button class="pss-btn-icon speed-btn active" data-speed="1" onclick="changeSpeed(1)">1x</button>
+                            <button class="pss-btn-icon speed-btn" data-speed="2" onclick="changeSpeed(2)">2x</button>
+                            <button class="pss-btn-icon speed-btn" data-speed="4" onclick="changeSpeed(4)">4x</button>
+                            <button class="pss-btn-icon" onclick="toggleFullscreen()">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="pss-timeline-wrapper" id="pss-timeline-wrapper">
+                        <canvas id="pss-timeline-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recordings Modal -->
+    <div id="recordings-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Recordings</h2>
+                <button class="modal-close" onclick="closeRecordingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul id="recording-list" class="recording-list">
+                    <!-- Items injected here -->
+                    <li style="text-align:center; color: #94a3b8;">Loading...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Server Settings</h2>
+                    <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label for="recordings-path">Storage Path (Local or UNC)</label>
+                            <input type="text" id="recordings-path" placeholder="e.g. C:\Recordings or \\Server\Share">
+                            <small style="color: var(--text-secondary); display:block; margin-top:5px;">For network shares, use UNC format: \\server\share</small>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
+                            <label>SMB Credentials (Optional)</label>
+                            <small style="color: var(--text-secondary); display:block; margin-bottom:10px;">Only required if the network share needs authentication.</small>
+                            
+                            <label for="smb-user" style="font-size:0.9em;">Username</label>
+                            <input type="text" id="smb-user" placeholder="DOMAIN\User or User">
+                            
+                            <label for="smb-pass" style="font-size:0.9em; margin-top:10px;">Password</label>
+                            <input type="password" id="smb-pass" placeholder="Password">
+                        </div>
+
+                        <button class="save-btn" onclick="saveSettings()">Save & Connect</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End main-content -->
+
     <script>
         const socket = io();
+        let recordingData = {};
+
+        // --- Smart PSS Playback Logic ---
+        let currentPlaybackEmp = null;
+        let currentPlaybackDate = null;
+        let currentVideoFile = null;
+        let timelineCanvas = null;
+        let timelineCtx = null;
+        
+        // MJPEG Player State
+        let playerState = {
+            playing: false,
+            startTime: 0,      // Client-side start time
+            videoStart: 0,     // Video offset in seconds
+            duration: 0,
+            fps: 10,
+            rate: 1.0,
+            interval: null
+        };
+        
+        // Navigation Update
+        function showSection(sectionId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + sectionId).classList.add('active');
+            
+            if(sectionId === 'dashboard') {
+                document.getElementById('employee-container').style.display = 'grid';
+                document.getElementById('playback-container').style.display = 'none';
+                document.getElementById('updates-container').style.display = 'none';
+                document.getElementById('page-title').innerText = 'Dashboard';
+            } else if(sectionId === 'updates') {
+                document.getElementById('employee-container').style.display = 'none';
+                document.getElementById('playback-container').style.display = 'none';
+                document.getElementById('updates-container').style.display = 'flex';
+                document.getElementById('page-title').innerText = 'Updates';
+                renderUpdatesList();
+            } else if(sectionId === 'playback') {
+                document.getElementById('employee-container').style.display = 'none';
+                document.getElementById('updates-container').style.display = 'none';
+                document.getElementById('playback-container').style.display = 'flex';
+                document.getElementById('page-title').innerText = 'Playback';
+                initPlaybackView();
+            }
+        }
+
+        function renderUpdatesList() {
+            const list = document.getElementById('updates-list');
+            list.innerHTML = '';
+            
+            const sids = Object.keys(connectedEmployees);
+            if (sids.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color: var(--text-secondary);">No clients connected.</div>';
+                return;
+            }
+            
+            sids.forEach(sid => {
+                const name = connectedEmployees[sid];
+                const ip = ipAddresses[sid] || 'Unknown IP';
+                
+                const card = document.createElement('div');
+                card.className = 'update-card';
+                card.innerHTML = `
+                    <div class="update-info">
+                        <span class="update-name">${name}</span>
+                        <span class="update-ip">${ip}</span>
+                    </div>
+                    <button onclick="forceUpdate('${sid}')" class="update-btn">
+                        <i class="fas fa-cloud-upload-alt"></i> Update
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+        }
+        
+        function forceUpdateAll() {
+            if (!confirm('Are you sure you want to force update ALL connected clients? This will restart all client applications.')) {
+                return;
+            }
+            
+            Object.keys(connectedEmployees).forEach(sid => {
+                forceUpdate(sid, false); // false = no confirm
+            });
+            alert('Update command sent to all clients.');
+        }
+
+        function forceUpdate(sid, confirmAction = true) {
+            if (confirmAction && !confirm(`Are you sure you want to force update ${connectedEmployees[sid]}? This will restart the client application.`)) {
+                return;
+            }
+            socket.emit('force_update_client', { sid: sid });
+            if (confirmAction) alert('Update command sent!');
+        }
+
+        function initPlaybackView() {
+            loadRecordingTree();
+            initTimeline();
+            
+            // Set today as default date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('pss-date-picker').value = today;
+        }
+
+        function loadRecordingTree() {
+            fetch('/api/recordings/tree')
+                .then(r => r.json())
+                .then(data => {
+                    recordingData = data;
+                    renderDeviceTree(data);
+                });
+        }
+
+        function renderDeviceTree(data) {
+            const treeContainer = document.getElementById('pss-device-tree');
+            treeContainer.innerHTML = '';
+            
+            const employees = Object.keys(data).sort();
+            
+            if (employees.length === 0) {
+                treeContainer.innerHTML = '<div style="padding:10px; color:#666;">No recordings found</div>';
+                return;
+            }
+
+            employees.forEach(emp => {
+                const node = document.createElement('div');
+                node.className = 'pss-tree-node';
+                node.innerHTML = `<i class="fas fa-desktop"></i> <span>${emp}</span>`;
+                node.onclick = () => selectEmployee(emp, node);
+                
+                if (currentPlaybackEmp === emp) {
+                    node.classList.add('selected');
+                }
+                
+                treeContainer.appendChild(node);
+            });
+        }
+
+        function selectEmployee(emp, nodeElement) {
+            // Deselect all
+            document.querySelectorAll('.pss-tree-node').forEach(n => n.classList.remove('selected'));
+            // Select new
+            nodeElement.classList.add('selected');
+            currentPlaybackEmp = emp;
+        }
+
+        function searchRecordings() {
+            if (!currentPlaybackEmp) {
+                alert('Please select a device (employee) first.');
+                return;
+            }
+            
+            const dateInput = document.getElementById('pss-date-picker').value;
+            if (!dateInput) {
+                alert('Please select a date.');
+                return;
+            }
+            
+            currentPlaybackDate = dateInput;
+            
+            // Check availability
+            if (recordingData[currentPlaybackEmp] && recordingData[currentPlaybackEmp][currentPlaybackDate]) {
+                const files = recordingData[currentPlaybackEmp][currentPlaybackDate];
+                drawTimeline(files);
+                // Auto-load first available hour?
+                // No, wait for user to click timeline or play.
+                document.getElementById('pss-no-video-msg').innerText = 'Select a time on the timeline';
+            } else {
+                alert('No recordings found for this date.');
+                drawTimeline({}); // Clear timeline
+            }
+        }
+
+        // --- Timeline Logic ---
+        function initTimeline() {
+            const wrapper = document.getElementById('pss-timeline-wrapper');
+            timelineCanvas = document.getElementById('pss-timeline-canvas');
+            
+            // Handle Resize
+            fitCanvasToContainer();
+            window.addEventListener('resize', fitCanvasToContainer);
+            
+            timelineCtx = timelineCanvas.getContext('2d');
+            
+            // Click listener
+            timelineCanvas.addEventListener('click', handleTimelineClick);
+            
+            // Initial draw (empty)
+            drawTimeline({});
+        }
+
+        function fitCanvasToContainer() {
+            if (!timelineCanvas) return;
+            const wrapper = document.getElementById('pss-timeline-wrapper');
+            timelineCanvas.width = wrapper.clientWidth;
+            timelineCanvas.height = wrapper.clientHeight;
+            // Redraw if we have data
+            if (currentPlaybackEmp && currentPlaybackDate) {
+                 const files = recordingData[currentPlaybackEmp] && recordingData[currentPlaybackEmp][currentPlaybackDate] 
+                               ? recordingData[currentPlaybackEmp][currentPlaybackDate] : {};
+                 drawTimeline(files);
+            } else {
+                drawTimeline({});
+            }
+        }
+
+        function drawTimeline(files, currentTotalSecondsOverride) {
+            if (!timelineCtx) return;
+            
+            const w = timelineCanvas.width;
+            const h = timelineCanvas.height;
+            const ctx = timelineCtx;
+            
+            // Background
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Ruler parameters
+            const totalHours = 24;
+            const pixelsPerHour = w / totalHours;
+            
+            // Draw Data Blocks (Green)
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.4)'; // Green semi-transparent
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 1;
+            
+            // Check if files is array (new list format) or object (old hour-key format)
+            if (Array.isArray(files)) {
+                files.forEach(filepath => {
+                    // Extract time from filename: HH-MM-SS.avi
+                    const filename = filepath.split('/').pop(); // "14-30-00.avi"
+                    const timePart = filename.split('.')[0];
+                    const parts = timePart.split('-');
+                    
+                    let hour = 0, min = 0, sec = 0;
+                    if (parts.length >= 3) {
+                         hour = parseInt(parts[0]);
+                         min = parseInt(parts[1]);
+                         sec = parseInt(parts[2]);
+                    } else if (parts.length === 1) {
+                         // Fallback for old "HH.avi" format
+                         hour = parseInt(parts[0]);
+                    }
+                    
+                    const startSeconds = hour * 3600 + min * 60 + sec;
+                    
+                    // Since we don't know duration without metadata, assume 10 mins or full hour for old format
+                    let durationSeconds = 600; // 10 minutes default block
+                    
+                    if (parts.length === 1) {
+                        durationSeconds = 3600; // Full hour
+                    }
+                    
+                    const x = (startSeconds / (24 * 3600)) * w;
+                    const width = (durationSeconds / (24 * 3600)) * w;
+                    
+                    ctx.fillRect(x, 20, width, h - 20);
+                    ctx.strokeRect(x, 20, width, h - 20);
+                });
+            } else {
+                // Fallback for object format (old)
+                Object.keys(files).forEach(hourStr => {
+                    const hour = parseInt(hourStr);
+                    const x = hour * pixelsPerHour;
+                    // Since we only know "14.mp4" exists, we draw the full hour block.
+                    ctx.fillRect(x, 20, pixelsPerHour, h - 20);
+                    
+                    // Add a darker border
+                    ctx.strokeRect(x, 20, pixelsPerHour, h - 20);
+                });
+            }
+            
+            // Draw Ruler Marks
+            ctx.fillStyle = '#ccc';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= totalHours; i++) {
+                const x = i * pixelsPerHour;
+                
+                // Tick line
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 15);
+                ctx.stroke();
+                
+                // Time label every 2 hours
+                if (i % 2 === 0) {
+                    ctx.fillText(`${i.toString().padStart(2,'0')}:00`, x, 12);
+                }
+            }
+            
+            // Draw Current Time Indicator (Red Line)
+            // Use override if provided (from update loop), otherwise calculate from state
+            let totalSecondsInDay = null;
+            
+            if (currentTotalSecondsOverride !== undefined) {
+                totalSecondsInDay = currentTotalSecondsOverride;
+            } else if (currentVideoFile && (playerState.playing || playerState.videoStart > 0)) {
+                const baseHour = parseInt(currentVideoFile);
+                let currentHourTime = playerState.videoStart;
+                
+                if (playerState.playing) {
+                     const now = Date.now();
+                     const elapsed = (now - playerState.startTime) / 1000;
+                     currentHourTime += (elapsed * playerState.rate);
+                }
+                totalSecondsInDay = baseHour * 3600 + currentHourTime;
+            }
+            
+            if (totalSecondsInDay !== null) {
+                 const pctOfDay = totalSecondsInDay / (24 * 3600);
+                 const needleX = pctOfDay * w;
+                 
+                 ctx.strokeStyle = 'red';
+                 ctx.lineWidth = 2;
+                 ctx.beginPath();
+                 ctx.moveTo(needleX, 0);
+                 ctx.lineTo(needleX, h);
+                 ctx.stroke();
+                 
+                 // Triangle head
+                 ctx.fillStyle = 'red';
+                 ctx.beginPath();
+                 ctx.moveTo(needleX - 5, 0);
+                 ctx.lineTo(needleX + 5, 0);
+                 ctx.lineTo(needleX, 10);
+                 ctx.fill();
+            }
+        }
+
+        function handleTimelineClick(e) {
+            const rect = timelineCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const w = timelineCanvas.width;
+            
+            const pct = x / w;
+            const totalSeconds = pct * 24 * 3600;
+            
+            // Find which file covers this time
+            const files = recordingData[currentPlaybackEmp] && recordingData[currentPlaybackEmp][currentPlaybackDate];
+            if (!files) return;
+
+            let targetFile = null;
+            let fileStartTime = 0;
+            
+            if (Array.isArray(files)) {
+                // New format: List of files
+                for (let filepath of files) {
+                     const filename = filepath.split('/').pop();
+                     const timePart = filename.split('.')[0];
+                     const parts = timePart.split('-');
+                     
+                     let h=0, m=0, s=0;
+                     let duration = 600; // 10 mins default
+                     
+                     if (parts.length >= 3) {
+                          h = parseInt(parts[0]);
+                          m = parseInt(parts[1]);
+                          s = parseInt(parts[2]);
+                     } else {
+                          h = parseInt(parts[0]);
+                          duration = 3600;
+                     }
+                     
+                     const start = h * 3600 + m * 60 + s;
+                     const end = start + duration;
+                     
+                     if (totalSeconds >= start && totalSeconds < end) {
+                         targetFile = filepath;
+                         fileStartTime = start;
+                         break;
+                     }
+                }
+            } else {
+                // Old format: keys are hours
+                const hour = Math.floor(totalSeconds / 3600);
+                const hourStr = hour.toString().padStart(2, '0');
+                if (files[hourStr]) {
+                    targetFile = files[hourStr];
+                    fileStartTime = hour * 3600;
+                }
+            }
+            
+            if (targetFile) {
+                const seekTime = totalSeconds - fileStartTime;
+                loadAndPlayVideo(targetFile, fileStartTime, seekTime);
+            } else {
+                console.log(`No recording found for time ${totalSeconds}`);
+                // Optional: Snap to nearest previous file?
+            }
+        }
+        
+        function loadAndPlayVideo(relPath, fileStartTime, seekTime) {
+            // fileStartTime is in seconds from midnight (for timeline positioning)
+            const img = document.getElementById('pss-video-player');
+            const msg = document.getElementById('pss-no-video-msg');
+            const btn = document.getElementById('btn-play-pause');
+            
+            // Reset if new file
+            if (currentVideoFile !== relPath) {
+                currentVideoFile = relPath;
+                // Get Metadata first
+                fetch(`/api/video_metadata?filename=${encodeURIComponent(relPath)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error(data.error);
+                            return;
+                        }
+                        playerState.duration = data.duration;
+                        playerState.fps = data.fps || 10;
+                        
+                        // Store the absolute start time of this file for the timeline
+                        playerState.fileStartTotalSeconds = fileStartTime;
+                        
+                        startPlayback(relPath, seekTime);
+                    });
+            } else {
+                // Just seek
+                startPlayback(relPath, seekTime);
+            }
+        }
+        
+        function startPlayback(relPath, startTime) {
+            const img = document.getElementById('pss-video-player');
+            const msg = document.getElementById('pss-no-video-msg');
+            const btn = document.getElementById('btn-play-pause');
+            
+            playerState.videoStart = startTime;
+            playerState.startTime = Date.now();
+            playerState.playing = true;
+            
+            // Set Image Source to Stream
+            const url = `/video_feed?filename=${encodeURIComponent(relPath)}&start=${startTime}&rate=${playerState.rate}&t=${Date.now()}`;
+            img.src = url;
+            img.style.display = 'block';
+            msg.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            
+            // Start Timer Loop
+            if (playerState.interval) clearInterval(playerState.interval);
+            playerState.interval = setInterval(updatePlayerLoop, 500);
+        }
+        
+        function updatePlayerLoop() {
+            if (!playerState.playing) return;
+            
+            const now = Date.now();
+            const elapsed = (now - playerState.startTime) / 1000;
+            const currentVideoTime = playerState.videoStart + (elapsed * playerState.rate);
+            
+            // Check end
+            if (currentVideoTime >= playerState.duration && playerState.duration > 0) {
+                stopPlayback();
+                return;
+            }
+            
+            updateTimeDisplay(currentVideoTime);
+        }
+        
+        function updateTimeDisplay(specificTime) {
+            const img = document.getElementById('pss-video-player');
+            if (!img || !currentVideoFile) return;
+            
+            // Calculate absolute time based on file start time + offset
+            let currentOffset = specificTime !== undefined ? specificTime : playerState.videoStart;
+            
+            // If fileStartTotalSeconds is set, use it. Otherwise fallback to parsing filename (old method)
+            let baseSeconds = 0;
+            
+            if (playerState.fileStartTotalSeconds !== undefined) {
+                baseSeconds = playerState.fileStartTotalSeconds;
+            } else {
+                // Fallback
+                const baseHour = parseInt(currentVideoFile.split('/').pop().split('.')[0]);
+                if (!isNaN(baseHour)) {
+                    baseSeconds = baseHour * 3600;
+                }
+            }
+            
+            const totalSec = baseSeconds + currentOffset;
+            
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = Math.floor(totalSec % 60);
+            
+            const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if (document.getElementById('pss-time-display')) {
+                document.getElementById('pss-time-display').innerText = timeStr;
+            }
+            
+            // Redraw timeline to update needle
+            const files = recordingData[currentPlaybackEmp] && recordingData[currentPlaybackEmp][currentPlaybackDate] 
+                               ? recordingData[currentPlaybackEmp][currentPlaybackDate] : {};
+            // Pass total seconds from midnight
+            drawTimeline(files, totalSec);
+        }
+
+        // --- Controls ---
+        function togglePlay() {
+            const img = document.getElementById('pss-video-player');
+            const btn = document.getElementById('btn-play-pause');
+            const msg = document.getElementById('pss-no-video-msg');
+            
+            if (!currentVideoFile) return;
+            
+            if (playerState.playing) {
+                // Pause
+                playerState.playing = false;
+                if (playerState.interval) clearInterval(playerState.interval);
+                
+                // To properly pause, we need to stop the stream and save the current time.
+                const now = Date.now();
+                const elapsed = (now - playerState.startTime) / 1000;
+                playerState.videoStart += (elapsed * playerState.rate);
+                
+                // Stop the stream to save bandwidth and hide broken image
+                img.src = ""; 
+                img.style.display = 'none';
+                
+                msg.innerText = "Paused";
+                msg.style.display = 'block';
+                
+                btn.innerHTML = '<i class="fas fa-play"></i>';
+            } else {
+                // Resume
+                // We need to know where we paused.
+                // currentVideoFile is now the full relative path
+                const relPath = currentVideoFile;
+                startPlayback(relPath, playerState.videoStart);
+            }
+        }
+
+        function stopPlayback() {
+            const img = document.getElementById('pss-video-player');
+            const msg = document.getElementById('pss-no-video-msg');
+            
+            playerState.playing = false;
+            if (playerState.interval) clearInterval(playerState.interval);
+            
+            img.src = "";
+            img.style.display = 'none';
+            
+            msg.innerText = "Select a record to play";
+            msg.style.display = 'block';
+            
+            playerState.videoStart = 0;
+            document.getElementById('btn-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+            updateTimeDisplay(0);
+        }
+
+        function changeSpeed(rate) {
+            playerState.rate = rate;
+            
+            // Update UI
+            document.querySelectorAll('.speed-btn').forEach(b => {
+                b.classList.remove('active');
+                if (parseFloat(b.dataset.speed) === rate) b.classList.add('active');
+            });
+            
+            // If playing, restart stream with new rate
+            if (playerState.playing && currentVideoFile) {
+                // Calculate current time to seamless switch
+                const now = Date.now();
+                const elapsed = (now - playerState.startTime) / 1000;
+                const currentVideoTime = playerState.videoStart + (elapsed * playerState.rate); // Use OLD rate for this calculation?
+                // Actually, rate changed just now.
+                // We should "commit" the current time and restart.
+                
+                // But wait, the previous rate was used for 'elapsed' duration.
+                // So the calculation above is actually wrong if we just changed `playerState.rate`.
+                // We should have passed `rate` to this function, but we updated the global before calculation.
+                // Let's fix logic:
+                
+                // We need to capture the state BEFORE updating rate.
+                // But this function is called with the NEW rate.
+                // So we assume playerState.rate is already the NEW one? No, we just set it.
+                // Ah, we need to fix this flow.
+            }
+        }
+        
+        // Revised changeSpeed
+        function changeSpeed(newRate) {
+            if (playerState.playing) {
+                // Commit current progress
+                const now = Date.now();
+                const elapsed = (now - playerState.startTime) / 1000;
+                playerState.videoStart += (elapsed * playerState.rate); // Use OLD rate for elapsed
+                
+                playerState.rate = newRate;
+                
+                // Restart playback
+                // currentVideoFile is full relative path
+                const relPath = currentVideoFile;
+                startPlayback(relPath, playerState.videoStart);
+            } else {
+                playerState.rate = newRate;
+            }
+
+            // Update UI
+            document.querySelectorAll('.speed-btn').forEach(b => {
+                b.classList.remove('active');
+                // Check innerText or attribute to match
+                if (parseFloat(b.innerText.replace('x','')) === newRate) b.classList.add('active');
+            });
+        }
+        
+        function toggleFullscreen() {
+            const container = document.querySelector('.pss-video-area');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function forceUpdate(sid) {
+            if(confirm('Are you sure you want to force this client to update and restart?')) {
+                socket.emit('force_update_client', {sid: sid});
+            }
+        }
+
+        function renameClient(sid, currentName) {
+            const newName = prompt("Enter new name for this client:", currentName);
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                socket.emit('rename_client', { sid: sid, new_name: newName.trim() });
+            }
+        }
+
+        function logout() {
+            if(confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        // ... existing socket handlers ...
         const container = document.getElementById('employee-container');
         const emptyState = document.getElementById('empty-state');
         const activeCountElem = document.getElementById('active-count');
-        const employees = {}; // Store elements by sid
+        
+        // Track state locally
+        let connectedEmployees = {}; // sid -> name
+        let recordingStatus = {};    // sid -> boolean
+        let ipAddresses = {};        // sid -> ip
+        const cv2Available = {{ 'true' if cv2_available else 'false' }};
 
         function updateEmptyState() {
-            const count = Object.keys(employees).length;
+            const count = Object.keys(connectedEmployees).length;
             activeCountElem.innerText = count;
             if (count > 0) {
                 emptyState.style.display = 'none';
@@ -306,39 +1626,84 @@
             }
         }
 
-        socket.on('connect', () => {
-            console.log('Connected to OmniVision Server');
-        });
-
-        socket.on('disconnect', () => {
-            console.warn('Disconnected from server');
-        });
-
-        socket.on('employee_list_update', (active_employees) => {
-            const currentSids = Object.keys(active_employees);
+        // --- Recordings Modal Logic ---
+        function openRecordingsModal() {
+            document.getElementById('recordings-modal').style.display = 'flex';
+            fetchRecordings();
+        }
+        
+        function closeRecordingsModal() {
+            document.getElementById('recordings-modal').style.display = 'none';
+        }
+        
+        function fetchRecordings() {
+            const list = document.getElementById('recording-list');
+            list.innerHTML = '<li style="text-align:center; color: #94a3b8;">Loading...</li>';
             
-            // Remove elements for disconnected employees
-            Object.keys(employees).forEach(sid => {
-                if (!currentSids.includes(sid)) {
-                    if (employees[sid].element) {
-                        employees[sid].element.remove();
+            fetch('/recordings')
+                .then(response => response.json())
+                .then(files => {
+                    list.innerHTML = '';
+                    if (files.length === 0) {
+                        list.innerHTML = '<li style="text-align:center; color: #94a3b8;">No recordings found.</li>';
+                        return;
                     }
-                    delete employees[sid];
-                }
-            });
-            updateEmptyState();
-        });
-
-        socket.on('update_screen', (data) => {
-            const { sid, name, image } = data;
+                    
+                    files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = 'recording-item';
+                        li.innerHTML = `
+                            <div class="recording-info">
+                                <span class="recording-name">${file.name}</span>
+                                <span class="recording-meta">${file.date} • ${file.size}</span>
+                            </div>
+                            <a href="/recordings/${file.name}" class="download-link" download>Download</a>
+                        `;
+                        list.appendChild(li);
+                    });
+                })
+                .catch(err => {
+                    list.innerHTML = '<li style="text-align:center; color: #ef4444;">Failed to load recordings.</li>';
+                    console.error(err);
+                });
+        }
+        
+        // --- Card Management ---
+        
+        function getOrCreateCard(sid, name) {
+            let card = document.getElementById(`card-${sid}`);
             
-            if (!employees[sid]) {
-                // Remove empty state if present
+            // Ensure we track this employee locally if not already tracked
+            if (!connectedEmployees[sid]) {
+                connectedEmployees[sid] = name || `User_${sid.substr(0,6)}`;
                 updateEmptyState();
+            }
 
-                // Create Card
-                const card = document.createElement('div');
+            if (card) {
+                // Update existing card name if changed
+                const nameDiv = card.querySelector('.employee-name');
+                if (nameDiv && name && nameDiv.innerText !== name) {
+                    nameDiv.innerText = name;
+                    // Update the onclick handler with the new name to ensure prompt shows correct current name
+                    nameDiv.onclick = () => renameClient(sid, name);
+                }
+                
+                // Update IP if changed
+                const ipDiv = document.getElementById(`ip-${sid}`);
+                if (ipDiv) {
+                    const newIp = ipAddresses[sid] || 'Unknown IP';
+                    if (ipDiv.innerText !== newIp) {
+                        ipDiv.innerText = newIp;
+                    }
+                }
+                
+                return card;
+            }
+            
+            // Create Card
+            card = document.createElement('div');
                 card.className = 'employee-card';
+                card.id = `card-${sid}`;
                 
                 // Header
                 const cardHeader = document.createElement('div');
@@ -347,12 +1712,31 @@
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'employee-name';
                 nameDiv.innerText = name || `User_${sid.substr(0,6)}`;
+                nameDiv.style.cursor = 'pointer';
+                nameDiv.title = 'Click to rename';
+                nameDiv.onclick = () => renameClient(sid, name);
                 
                 const statusBadge = document.createElement('div');
                 statusBadge.className = 'status-badge';
                 statusBadge.innerText = 'ONLINE';
 
-                cardHeader.appendChild(nameDiv);
+                // IP Address Display
+                const ipDiv = document.createElement('div');
+                ipDiv.className = 'client-ip';
+                ipDiv.style.fontSize = '0.75rem';
+                ipDiv.style.color = 'var(--text-secondary)';
+                ipDiv.style.marginTop = '2px';
+                ipDiv.innerText = ipAddresses[sid] || 'Unknown IP';
+                ipDiv.id = `ip-${sid}`;
+
+                const headerTextDiv = document.createElement('div');
+                headerTextDiv.style.display = 'flex';
+                headerTextDiv.style.flexDirection = 'column';
+                headerTextDiv.style.minWidth = '0'; // Allow shrinking for ellipsis
+                headerTextDiv.appendChild(nameDiv);
+                headerTextDiv.appendChild(ipDiv);
+
+                cardHeader.appendChild(headerTextDiv);
                 cardHeader.appendChild(statusBadge);
 
                 // Image Wrapper
@@ -383,92 +1767,233 @@
                 const timeDiv = document.createElement('div');
                 timeDiv.className = 'update-time';
                 timeDiv.innerText = 'Syncing...';
+                timeDiv.id = `time-${sid}`;
 
-                const btn = document.createElement('button');
-                btn.className = 'fullscreen-btn';
-                btn.innerText = 'Expand';
-                btn.onclick = () => toggleFullScreen(imgWrapper);
+                const controls = document.createElement('div');
+                controls.className = 'controls';
+
+                if (cv2Available) {
+                    const recordBtn = document.createElement('button');
+                    recordBtn.className = 'btn record-btn';
+                    recordBtn.id = `record-btn-${sid}`;
+                    recordBtn.innerText = 'Record';
+                    recordBtn.onclick = () => toggleRecording(sid);
+                    controls.appendChild(recordBtn);
+                }
+
+                const fullBtn = document.createElement('button');
+                fullBtn.className = 'fullscreen-btn';
+                fullBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                fullBtn.title = 'Full Screen';
+                fullBtn.onclick = () => toggleFullScreen(imgWrapper);
+
+                controls.appendChild(fullBtn);
 
                 cardFooter.appendChild(timeDiv);
-                cardFooter.appendChild(btn);
+                cardFooter.appendChild(controls);
 
                 // Assemble Card
                 card.appendChild(cardHeader);
                 card.appendChild(imgWrapper);
                 card.appendChild(cardFooter);
                 container.appendChild(card);
-                
-                employees[sid] = {
-                    element: card,
-                    img: img,
-                    imgWrapper: imgWrapper,
-                    timeDiv: timeDiv,
-                    cursor: null
-                };
-                updateEmptyState();
-            }
             
-            // Update Image Data
-            if (employees[sid].img) {
-                employees[sid].img.src = 'data:image/jpeg;base64,' + image;
-                const now = new Date();
-                employees[sid].timeDiv.innerText = `Last sync: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-            }
-        });
+            return card;
+        }
 
-        function toggleFullScreen(elem) {
+        function toggleFullScreen(element) {
             if (!document.fullscreenElement) {
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen().catch(err => console.log(err));
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen();
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen();
-                }
+                element.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
+                document.exitFullscreen();
+            }
+        }
+        
+        function toggleRecording(sid) {
+            const isRecording = recordingStatus[sid] || false;
+            if (isRecording) {
+                socket.emit('stop_recording', { sid: sid });
+            } else {
+                socket.emit('start_recording', { sid: sid });
+            }
+        }
+        
+        function updateRecordingButton(sid, isRecording) {
+            const btn = document.getElementById(`record-btn-${sid}`);
+            if (btn) {
+                if (isRecording) {
+                    btn.innerText = 'Stop';
+                    btn.classList.add('recording');
+                } else {
+                    btn.innerText = 'Record';
+                    btn.classList.remove('recording');
                 }
             }
         }
 
-        socket.on('update_mouse', (data) => {
-            const { sid, x, y } = data;
-            
-            if (employees[sid]) {
-                const imgWrapper = employees[sid].imgWrapper;
-                const img = employees[sid].img;
-                
-                if (!imgWrapper || !img) return;
+        // --- Socket Events ---
 
-                let cursor = employees[sid].cursor;
-                if (!cursor) {
-                    cursor = document.createElement('div');
-                    cursor.className = 'cursor';
-                    imgWrapper.appendChild(cursor);
-                    employees[sid].cursor = cursor;
-                }
-                
-                // Calculate position considering object-fit: contain
-                const wrapperRect = imgWrapper.getBoundingClientRect();
-                const imgRect = img.getBoundingClientRect();
-                
-                // Relative coordinates mapping
-                const offsetX = imgRect.left - wrapperRect.left;
-                const offsetY = imgRect.top - wrapperRect.top;
-                const cursorX = offsetX + (x * imgRect.width);
-                const cursorY = offsetY + (y * imgRect.height);
-                
-                cursor.style.left = `${cursorX}px`;
-                cursor.style.top = `${cursorY}px`;
-            }
+        socket.on('connect', () => {
+            console.log('Connected to OmniVision Server');
         });
 
-        // Cleanup stale connections gracefully if socket drops unexpectedly
-        setInterval(() => {
-            // (Optional logic to verify last active timestamps and remove dead cards)
-        }, 5000);
+        socket.on('disconnect', () => {
+            console.warn('Disconnected from server');
+        });
 
+        socket.on('employee_list_update', (data) => {
+            // Support both old format (just dict) and new format ({employees, recording_status, ip_addresses})
+            let newEmployees = {};
+            let newRecordingStatus = {};
+            let newIpAddresses = {};
+            
+            if (data.employees) {
+                newEmployees = data.employees;
+                newRecordingStatus = data.recording_status || {};
+                newIpAddresses = data.ip_addresses || {};
+            } else {
+                newEmployees = data;
+            }
+            
+            connectedEmployees = newEmployees;
+            recordingStatus = newRecordingStatus;
+            ipAddresses = newIpAddresses;
+            
+            const currentSids = Object.keys(connectedEmployees);
+            
+            // Remove elements for disconnected employees
+            const cards = document.querySelectorAll('.employee-card');
+            cards.forEach(card => {
+                const sid = card.id.replace('card-', '');
+                if (!currentSids.includes(sid)) {
+                    card.remove();
+                }
+            });
+            
+            // Create cards for new employees and update recording status
+            currentSids.forEach(sid => {
+                getOrCreateCard(sid, connectedEmployees[sid]);
+                updateRecordingButton(sid, recordingStatus[sid]);
+            });
+            
+            updateEmptyState();
+            
+            // If Updates tab is active, refresh the list
+            if (document.getElementById('updates-container').style.display === 'flex') {
+                renderUpdatesList();
+            }
+        });
+        
+        socket.on('recording_started', (data) => {
+            recordingStatus[data.sid] = true;
+            updateRecordingButton(data.sid, true);
+        });
+        
+        socket.on('recording_stopped', (data) => {
+            recordingStatus[data.sid] = false;
+            updateRecordingButton(data.sid, false);
+        });
+
+        socket.on('update_screen', (data) => {
+            const { sid, name, image } = data;
+            
+            // Ensure card exists
+            getOrCreateCard(sid, name);
+            
+            const img = document.getElementById(`screen-${sid}`);
+            if (img) {
+                img.src = "data:image/jpeg;base64," + image;
+            }
+            
+            const timeDiv = document.getElementById(`time-${sid}`);
+            if (timeDiv) {
+                const now = new Date();
+                timeDiv.innerText = now.toLocaleTimeString();
+            }
+        });
+        
+        // Mouse handling removed for brevity/simplicity if not critical, or can be re-added
+        // Re-adding simple mouse cursor logic
+        socket.on('update_mouse', (data) => {
+             const { sid, x, y } = data;
+             const card = document.getElementById(`card-${sid}`);
+             if (card) {
+                 const imgWrapper = card.querySelector('.img-wrapper');
+                 let cursor = document.getElementById(`cursor-${sid}`);
+                 if (!cursor) {
+                     cursor = document.createElement('div');
+                     cursor.className = 'cursor';
+                     cursor.id = `cursor-${sid}`;
+                     imgWrapper.appendChild(cursor);
+                 }
+                 // x, y are percentages (0-1)
+                 cursor.style.left = (x * 100) + '%';
+                 cursor.style.top = (y * 100) + '%';
+             }
+        });
+
+        function openSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            // Fetch current settings
+            fetch('/config')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('recordings-path').value = data.recordings_path || '';
+                    document.getElementById('smb-user').value = data.smb_username || '';
+                    document.getElementById('smb-pass').value = ''; // Don't show password
+                })
+                .catch(error => console.error('Error fetching settings:', error));
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            const newPath = document.getElementById('recordings-path').value;
+            const smbUser = document.getElementById('smb-user').value;
+            const smbPass = document.getElementById('smb-pass').value;
+
+            if (!newPath) return;
+
+            fetch('/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    recordings_path: newPath,
+                    smb_username: smbUser,
+                    smb_password: smbPass
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Settings saved and connected successfully!');
+                    closeSettingsModal();
+                } else {
+                    alert('Error saving settings: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                alert('Error: ' + err);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const recModal = document.getElementById('recordings-modal');
+            const setModal = document.getElementById('settings-modal');
+            if (event.target == recModal) {
+                closeRecordingsModal();
+            }
+            if (event.target == setModal) {
+                closeSettingsModal();
+            }
+        }
     </script>
 </body>
 </html>

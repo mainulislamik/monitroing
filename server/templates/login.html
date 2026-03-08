@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>SBL Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        @keyframes shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Glassmorphism Background Shapes */
+        .background-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .shape-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: #ff6b6b;
+            opacity: 0.6;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: #4ecdc4;
+            opacity: 0.6;
+            animation-delay: -5s;
+        }
+
+        .login-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 60px 40px 40px 40px;
+            width: 350px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 1;
+            margin-top: 30px; /* Space for the floating icon */
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .user-icon-container {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            background: #0f172a;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border: 4px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-icon-container:hover {
+            transform: translateX(-50%) scale(1.05);
+            animation: pulse 2s infinite;
+        }
+
+        .user-icon-container i {
+            font-size: 40px;
+            color: #4CAF50;
+            transition: transform 0.3s;
+        }
+
+        .user-icon-container:hover i {
+            transform: rotate(360deg);
+        }
+
+        h2 {
+            color: #fff;
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+            opacity: 0; /* Initial state for animation */
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ccc;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+            transition: color 0.3s;
+        }
+
+        .input-group input:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: #4CAF50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+            transform: scale(1.02);
+        }
+
+        .input-group input:focus + i {
+            color: #4CAF50;
+        }
+
+        .input-group:hover input {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            align-items: center;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .options label:hover {
+            color: #fff;
+        }
+
+        .options input {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+
+        .options a {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .options a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #fff;
+            transition: width 0.3s;
+        }
+
+        .options a:hover::after {
+            width: 100%;
+        }
+
+        .options a:hover {
+            opacity: 1;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, #4CAF50, #45a049, #4CAF50);
+            background-size: 200% auto;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.8s forwards, shine 3s infinite linear;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+            background-position: right center;
+        }
+
+        .login-btn:active {
+            transform: translateY(1px);
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shape shape-1"></div>
+    <div class="background-shape shape-2"></div>
+
+    <div class="login-card">
+        <div class="user-icon-container">
+            <i class="fas fa-user"></i>
+        </div>
+
+        <h2>SBL</h2>
+
+        {% if error %}
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" name="username" placeholder="Username / Email ID" required autofocus>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+
+            <div class="options">
+                <label>
+                    <input type="checkbox" name="remember"> Remember me
+                </label>
+                <a href="#">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="login-btn">LOGIN</button>
+        </form>
+    </div>
+</body>
+</html>

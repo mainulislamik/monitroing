@@ -5,4 +5,3 @@ dist/
 build/
 *.exe
 SystemDrive.spec
-monitoring.db

@@ -5,3 +5,6 @@ Pillow
 dxcam
 numpy
 pyinstaller
+soundcard
+pywin32
+sounddevice

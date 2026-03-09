@@ -29,6 +29,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode=async_mode)
 # Configuration
 CONFIG_FILE = 'server_config.json'
 DATABASE_FILE = 'monitoring.db'
+frame_counters = {}
 
 def init_db():
     conn = sqlite3.connect(DATABASE_FILE)
@@ -136,6 +137,7 @@ def connect_smb(path, username, password):
 server_config = load_config()
 RECORDINGS_DIR = server_config['recordings_path']
 CLIENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'client'))
+DRIVERS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'drivers'))
 
 # Try to connect if it's an SMB path
 if RECORDINGS_DIR.startswith(r'\\'):
@@ -169,6 +171,19 @@ sid_to_ip = {}
 
 # Store recording sessions: sid -> { 'writer': cv2.VideoWriter, 'filename': str, 'path': str, 'width': int, 'height': int }
 recording_sessions = {}
+pending_updates = {}
+
+@app.after_request
+def add_no_cache_headers(response):
+    try:
+        content_type = (response.headers.get('Content-Type') or '').lower()
+        if 'text/html' in content_type:
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+    except Exception:
+        pass
+    return response
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -517,6 +532,17 @@ def recording_loop():
 
 # Start recording loop
 socketio.start_background_task(recording_loop)
+def update_watchdog():
+    while True:
+        socketio.sleep(2.0)
+        now = time.time()
+        for sid, started in list(pending_updates.items()):
+            if now - started > 90:
+                name = employees.get(sid, 'Unknown')
+                payload = {'sid': sid, 'name': name, 'error': 'No response after update request'}
+                emit('client_update_failed', payload, broadcast=True)
+                pending_updates.pop(sid, None)
+socketio.start_background_task(update_watchdog)
 
 @socketio.on('connect')
 def handle_connect():
@@ -530,6 +556,18 @@ def handle_connect():
         'recording_status': {sid: (sid in recording_sessions) for sid in employees},
         'ip_addresses': sid_to_ip
     })
+    
+    try:
+        for sid in list(employees.keys()):
+            emit('request_frame', {}, room=sid)
+    except Exception as e:
+        print(f"Error requesting frames on connect: {e}")
+
+@socketio.on('enable_loopback')
+def handle_enable_loopback(data):
+    target_sid = data.get('sid')
+    if target_sid and target_sid in employees:
+        emit('enable_loopback', {}, room=target_sid)
 
 @socketio.on('register_employee')
 def handle_register(data):
@@ -596,6 +634,8 @@ def handle_register(data):
         'recording_status': {sid: (sid in recording_sessions) for sid in employees},
         'ip_addresses': sid_to_ip
     }, broadcast=True)
+    
+    emit('request_frame', {}, room=request.sid)
 
 @socketio.on('rename_client')
 def handle_rename_client(data):
@@ -752,8 +792,39 @@ def handle_force_update(data):
     """
     target_sid = data.get('sid')
     if target_sid and target_sid in employees:
-        print(f"Sending update command to {employees[target_sid]} ({target_sid})")
+        name = employees.get(target_sid, 'Unknown')
+        payload = {'sid': target_sid, 'name': name, 'ts': datetime.datetime.now().isoformat()}
+        emit('client_update_start', payload, broadcast=True)
+        pending_updates[target_sid] = time.time()
+        print(f"Sending update command to {name} ({target_sid})")
         emit('perform_update', {}, room=target_sid)
+        
+@socketio.on('update_start')
+def handle_update_start(data):
+    sid = request.sid
+    name = employees.get(sid, 'Unknown')
+    payload = {'sid': sid, 'name': name, 'ts': datetime.datetime.now().isoformat()}
+    emit('client_update_start', payload, broadcast=True)
+    
+@socketio.on('update_failed')
+def handle_update_failed(data):
+    sid = request.sid
+    name = employees.get(sid, 'Unknown')
+    payload = {'sid': sid, 'name': name, 'error': data.get('error', '')}
+    emit('client_update_failed', payload, broadcast=True)
+    pending_updates.pop(sid, None)
+        
+@socketio.on('update_complete')
+def handle_update_complete(data):
+    sid = request.sid
+    name = employees.get(sid, 'Unknown')
+    print(f"Client updated and restarted: {name} ({sid})")
+    payload = {'sid': sid, 'name': name, 'ts': datetime.datetime.now().isoformat()}
+    emit('client_updated', payload, broadcast=True)
+    pending_updates.pop(sid, None)
+
+# Dictionary to track frame counts for debugging
+frame_counters = {}
 
 @socketio.on('screen_share')
 def handle_screen_share(data):
@@ -764,6 +835,14 @@ def handle_screen_share(data):
     sid = request.sid
     data['sid'] = sid
     data['name'] = employees.get(sid, 'Unknown')
+    
+    # Debug: Print occasional frame receipt
+    if sid not in frame_counters:
+        frame_counters[sid] = 0
+    frame_counters[sid] += 1
+    if frame_counters[sid] % 50 == 0:
+        print(f"DEBUG: Received {frame_counters[sid]} frames from {data['name']} ({sid})")
+
     emit('update_screen', data, broadcast=True)
     
     # Handle recording
@@ -783,6 +862,51 @@ def handle_screen_share(data):
         except Exception as e:
             print(f"Error processing frame for recording {sid}: {e}")
 
+@socketio.on('audio_chunk')
+def handle_audio_chunk(data):
+    sid = request.sid
+    data['sid'] = sid
+    data['name'] = employees.get(sid, 'Unknown')
+    emit('audio_chunk', data, broadcast=True)
+
+@socketio.on('loopback_unavailable')
+def handle_loopback_unavailable(data):
+    sid = request.sid
+    payload = {
+        'sid': sid,
+        'name': employees.get(sid, 'Unknown'),
+        'error': data.get('error', '')
+    }
+    emit('loopback_unavailable', payload, broadcast=True)
+
+@socketio.on('loopback_enabled')
+def handle_loopback_enabled(data):
+    sid = request.sid
+    payload = {
+        'sid': sid,
+        'name': employees.get(sid, 'Unknown')
+    }
+    emit('loopback_enabled', payload, broadcast=True)
+
+@socketio.on('install_loopback')
+def handle_install_loopback(data):
+    target_sid = data.get('sid')
+    if target_sid and target_sid in employees:
+        emit('install_loopback', {}, room=target_sid)
+        emit('loopback_install_status', {
+            'sid': target_sid,
+            'name': employees.get(target_sid, 'Unknown'),
+            'status': 'requested'
+        }, broadcast=True)
+    else:
+        # If no specific target, forward to the sender (fallback)
+        emit('install_loopback', {}, room=request.sid)
+        emit('loopback_install_status', {
+            'sid': request.sid,
+            'name': employees.get(request.sid, 'Unknown'),
+            'status': 'requested'
+        }, broadcast=True)
+
 @socketio.on('mouse_move')
 def handle_mouse_move(data):
     """
@@ -791,6 +915,13 @@ def handle_mouse_move(data):
     """
     data['sid'] = request.sid
     emit('update_mouse', data, broadcast=True)
+
+@app.route('/drivers/<path:filename>')
+def serve_driver_file(filename):
+    try:
+        return send_from_directory(DRIVERS_DIR, filename)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
 
 if __name__ == '__main__':
     print("Starting secure iMon Server on port 5000 (Eventlet)...")

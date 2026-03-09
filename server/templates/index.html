@@ -1787,7 +1787,21 @@
                 fullBtn.title = 'Full Screen';
                 fullBtn.onclick = () => toggleFullScreen(imgWrapper);
 
+                const listenPcBtn = document.createElement('button');
+                listenPcBtn.className = 'btn';
+                listenPcBtn.id = `pc-btn-${sid}`;
+                listenPcBtn.innerText = 'Listen PC';
+                listenPcBtn.onclick = () => selectAudioTarget(sid, 'system', listenPcBtn, listenMicBtn);
+
+                const listenMicBtn = document.createElement('button');
+                listenMicBtn.className = 'btn';
+                listenMicBtn.id = `mic-btn-${sid}`;
+                listenMicBtn.innerText = 'Listen Mic';
+                listenMicBtn.onclick = () => selectAudioTarget(sid, 'mic', listenPcBtn, listenMicBtn);
+
                 controls.appendChild(fullBtn);
+                controls.appendChild(listenPcBtn);
+                controls.appendChild(listenMicBtn);
 
                 cardFooter.appendChild(timeDiv);
                 cardFooter.appendChild(controls);
@@ -1896,6 +1910,62 @@
             updateRecordingButton(data.sid, false);
         });
 
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.background = '#22c55e';
+            toast.style.color = '#0b2e14';
+            toast.style.padding = '10px 14px';
+            toast.style.borderRadius = '6px';
+            toast.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+            toast.style.zIndex = '9999';
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        socket.on('client_updated', (data) => {
+            const { sid, name } = data;
+            const card = document.getElementById(`card-${sid}`);
+            if (card) {
+                const timeDiv = card.querySelector('.update-time');
+                if (timeDiv) timeDiv.innerText = 'Updated';
+            }
+            showToast(`Client updated: ${name}`);
+        });
+        socket.on('client_update_start', (data) => {
+            const { sid, name } = data;
+            const card = document.getElementById(`card-${sid}`);
+            if (card) {
+                const timeDiv = card.querySelector('.update-time');
+                if (timeDiv) timeDiv.innerText = 'Updating...';
+            }
+            showToast(`Updating client: ${name}`);
+        });
+        socket.on('client_update_failed', (data) => {
+            const { sid, name, error } = data;
+            const card = document.getElementById(`card-${sid}`);
+            if (card) {
+                const timeDiv = card.querySelector('.update-time');
+                if (timeDiv) timeDiv.innerText = 'Update failed';
+            }
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.background = '#ef4444';
+            toast.style.color = '#fff';
+            toast.style.padding = '10px 14px';
+            toast.style.borderRadius = '6px';
+            toast.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+            toast.style.zIndex = '9999';
+            toast.innerText = `Update failed for ${name}: ${error}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        });
+
         socket.on('update_screen', (data) => {
             const { sid, name, image } = data;
             
@@ -1914,6 +1984,139 @@
             }
         });
         
+        let audioCtx = null;
+        let audioProc = null;
+        let audioSid = null;
+        let audioSource = null;
+        let audioQueueL = [];
+        let audioQueueR = [];
+        let lastAudioTs = {};
+        function ensureAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioProc = audioCtx.createScriptProcessor(2048, 0, 2);
+                audioProc.onaudioprocess = (e) => {
+                    const outL = e.outputBuffer.getChannelData(0);
+                    const outR = e.outputBuffer.getChannelData(1);
+                    for (let i = 0; i < outL.length; i++) {
+                        outL[i] = audioQueueL.length ? audioQueueL.shift() : 0;
+                        outR[i] = audioQueueR.length ? audioQueueR.shift() : 0;
+                    }
+                };
+                audioProc.connect(audioCtx.destination);
+            }
+        }
+        function selectAudioTarget(sid, source, pcBtn, micBtn) {
+            ensureAudio();
+            audioSid = sid;
+            audioSource = source;
+            audioQueueL = [];
+            audioQueueR = [];
+            const selectTime = performance.now();
+            if (pcBtn && micBtn) {
+                pcBtn.classList.toggle('recording', source === 'system');
+                micBtn.classList.toggle('recording', source === 'mic');
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                gain.gain.value = 0.01;
+                osc.frequency.value = 440;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                setTimeout(() => { osc.stop(); }, 120);
+            } catch (e) {}
+            setTimeout(() => {
+                const last = lastAudioTs[`${sid}:system`] || 0;
+                if (audioSid === sid && audioSource === 'system' && last < selectTime) {
+                    audioSource = 'mic';
+                    if (pcBtn && micBtn) {
+                        pcBtn.classList.toggle('recording', false);
+                        micBtn.classList.toggle('recording', true);
+                    }
+                    showToast('Loopback not available; switched to Mic');
+                    try {
+                        socket.emit('install_loopback', { sid });
+                        showToast('Trying to enable system audio on that PC');
+                    } catch (e) {}
+                }
+            }, 1500);
+        }
+        socket.on('audio_chunk', (data) => {
+            lastAudioTs[`${data.sid}:${data.source}`] = performance.now();
+            if (!audioSid || data.sid !== audioSid) return;
+            if (!audioSource || data.source !== audioSource) return;
+            
+            // Ensure context is running
+            ensureAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const sr = data.sr || 48000;
+            const ch = data.ch || 2;
+            const b64 = data.pcm;
+            if (!b64) return;
+            const raw = atob(b64);
+            const buf = new Int16Array(raw.length / 2);
+            let maxAmp = 0;
+            for (let i = 0; i < buf.length; i++) {
+                const lo = raw.charCodeAt(i * 2);
+                const hi = raw.charCodeAt(i * 2 + 1);
+                let val = (hi << 8) | lo;
+                if (val & 0x8000) val = val - 0x10000;
+                buf[i] = val;
+                if (Math.abs(val) > maxAmp) maxAmp = Math.abs(val);
+            }
+            
+            // Visual indicator
+            const pcBtn = document.getElementById(`pc-btn-${data.sid}`);
+            const micBtn = document.getElementById(`mic-btn-${data.sid}`);
+            if (maxAmp > 100) { // Threshold for "sound detected"
+                 if (data.source === 'system' && pcBtn) {
+                     pcBtn.style.boxShadow = `0 0 10px rgba(0, 255, 0, ${Math.min(1, maxAmp / 10000)})`;
+                     setTimeout(() => pcBtn.style.boxShadow = '', 100);
+                 } else if (data.source === 'mic' && micBtn) {
+                     micBtn.style.boxShadow = `0 0 10px rgba(0, 255, 0, ${Math.min(1, maxAmp / 10000)})`;
+                     setTimeout(() => micBtn.style.boxShadow = '', 100);
+                 }
+            }
+
+            if (ch === 2) {
+                for (let i = 0; i < buf.length; i += 2) {
+                    audioQueueL.push(buf[i] / 32767.0);
+                    audioQueueR.push(buf[i + 1] / 32767.0);
+                }
+            } else {
+                for (let i = 0; i < buf.length; i++) {
+                    const v = buf[i] / 32767.0;
+                    audioQueueL.push(v);
+                    audioQueueR.push(v);
+                }
+            }
+        });
+        socket.on('loopback_unavailable', (data) => {
+            const { sid, name } = data;
+            if (audioSid === sid && audioSource === 'system') {
+                showToast(`System audio not available for ${name}`);
+            }
+        });
+        socket.on('loopback_enabled', (data) => {
+            const { sid, name } = data;
+            if (audioSid === sid) {
+                audioSource = 'system';
+                showToast(`System audio enabled for ${name}`);
+            }
+        });
+        socket.on('loopback_install_status', (data) => {
+            const { sid, name, status, error } = data;
+            if (status === 'requested') showToast(`Enabling system audio on ${name}...`);
+            else if (status === 'starting') showToast(`Installing loopback on ${name}...`);
+            else if (status === 'failed') showToast(`Enable system audio failed on ${name}${error ? ': ' + error : ''}`);
+            else if (status === 'missing') showToast(`Driver files missing on ${name}`);
+        });
         // Mouse handling removed for brevity/simplicity if not critical, or can be re-added
         // Re-adding simple mouse cursor logic
         socket.on('update_mouse', (data) => {
